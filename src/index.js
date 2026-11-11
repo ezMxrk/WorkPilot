@@ -1,8 +1,5 @@
-const appName = "WorkPilot";
-const version = "1.0.0";
+const remainingApplications = require("./utils/remainingApplications");
 
-console.log("================================");
-console.log(`Welcome to ${appName}`);
-console.log(`Version: ${version}`);
-console.log("Your application is starting...");
-console.log("================================");
+console.log(remainingApplications(20, 7));
+console.log(remainingApplications(20, 25));
+console.log(remainingApplications(20, -3));
