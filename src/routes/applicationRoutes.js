@@ -3,6 +3,7 @@ const express = require("express");
 
 const router = express.Router();
 
+// Controllers
 const {
     getApplications,
     getApplication,
@@ -11,15 +12,23 @@ const {
     removeApplication
 } = require("../controllers/applicationController");
 
+// Middlewares
 const validateRequest = require("../middleware/validateRequest");
+const validateQuery = require("../middleware/validateQuery");
 
+// Validators
 const {
     createApplicationSchema,
-    updateApplicationSchema
+    updateApplicationSchema,
+    listApplicationsSchema
 } = require("../validators/applicationValidator");
 
-// GET: tutte le candidature
-router.get("/", getApplications);
+// GET: tutte le candidature con filtri e paginazione
+router.get(
+    "/",
+    validateQuery(listApplicationsSchema),
+    getApplications
+);
 
 // POST: nuova candidatura
 router.post(

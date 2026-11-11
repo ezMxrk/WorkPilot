@@ -97,9 +97,62 @@ function deleteApplication(id) {
     return true;
 }
 
+
+function listApplications({
+    status,
+    company,
+    page = 1,
+    limit = 10
+} = {}) {
+    let results = [...applications];
+
+    // Filtra per stato
+    if (status) {
+        results = results.filter(
+            application => application.status === status
+        );
+    }
+
+    // Cerca un'azienda ignorando maiuscole e minuscole
+    if (company) {
+        const searchTerm = company.toLowerCase();
+
+        results = results.filter(
+            application =>
+                application.company.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    // Calcola il numero totale di risultati prima della paginazione
+    const total = results.length;
+
+    const totalPages = Math.ceil(total / limit);
+
+    // Calcola da quale elemento iniziare
+    const startIndex = (page - 1) * limit;
+
+    // Seleziona soltanto gli elementi della pagina richiesta
+    const paginatedResults = results.slice(
+        startIndex,
+        startIndex + limit
+    );
+
+    return {
+        data: paginatedResults,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages
+        }
+    };
+}
+
+
 module.exports = {
     addApplication,
     getAllApplications,
+    listApplications,
     getApplicationById,
     updateApplication,
     deleteApplication

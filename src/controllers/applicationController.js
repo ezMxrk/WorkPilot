@@ -2,6 +2,7 @@
 const {
     addApplication,
     getAllApplications,
+    listApplications,
     getApplicationById,
     updateApplication,
     deleteApplication
@@ -10,8 +11,11 @@ const {
 // GET: recupera tutte le candidature
 function getApplications(req, res, next) {
     try {
-        const applications = getAllApplications();
-        res.status(200).json(applications);
+        const filters = res.locals.validatedQuery;
+
+        const result = listApplications(filters);
+
+        res.status(200).json(result);
     } catch (error) {
         next(error);
     }
