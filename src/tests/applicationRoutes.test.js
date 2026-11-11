@@ -130,3 +130,11 @@ test("GET should return 404 for a nonexistent application", async () => {
 
     assert.equal(response.status, 404);
 });
+
+test("GET should return 400 for an invalid UUID", async () => {
+    const response = await request(app)
+        .get("/api/applications/not-a-valid-uuid");
+
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error, "Invalid data format");
+});

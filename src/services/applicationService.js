@@ -59,37 +59,26 @@ async function getApplicationById(id) {
 }
 
 // Aggiorna una candidatura
+
 async function updateApplication(id, updates) {
-    const application = await getApplicationById(id);
-
-    if (!application) {
-        return null;
-    }
-
-    // Riutilizza la validazione già presente nel modello
-    const updatedData = createApplication(
-        updates.company ?? application.company,
-        updates.position ?? application.position,
-        updates.status ?? application.status
-    );
-
     const result = await pool.query(
         `UPDATE applications
-         SET company = $1,
-             position = $2,
-             status = $3
+         SET company = COALESCE($1, company),
+             position = COALESCE($2, position),
+             status = COALESCE($3, status)
          WHERE id = $4
          RETURNING *`,
         [
-            updatedData.company,
-            updatedData.position,
-            updatedData.status,
+            updates.company ?? null,
+            updates.position ?? null,
+            updates.status ?? null,
             id
         ]
     );
 
     return mapApplication(result.rows[0]);
 }
+
 
 // Elimina una candidatura
 async function deleteApplication(id) {
