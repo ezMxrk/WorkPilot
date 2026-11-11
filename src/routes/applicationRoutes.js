@@ -4,87 +4,26 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    addApplication,
-    getAllApplications,
-    getApplicationById,
-    updateApplication,
-    deleteApplication
-} = require("../services/applicationService");
+    getApplications,
+    getApplication,
+    createApplication,
+    editApplication,
+    removeApplication
+} = require("../controllers/applicationController");
 
-// GET: recupera tutte le candidature
-router.get("/", (req, res) => {
-    const applications = getAllApplications();
+// GET: tutte le candidature
+router.get("/", getApplications);
 
-    res.status(200).json(applications);
-});
+// POST: nuova candidatura
+router.post("/", createApplication);
 
-// GET: recupera una candidatura tramite ID
-router.get("/:id", (req, res) => {
-    const application = getApplicationById(req.params.id);
+// GET: candidatura tramite ID
+router.get("/:id", getApplication);
 
-    if (!application) {
-        return res.status(404).json({
-            error: "Application not found"
-        });
-    }
+// PUT: aggiornamento candidatura
+router.put("/:id", editApplication);
 
-    res.status(200).json(application);
-});
-
-// POST: crea una nuova candidatura
-router.post("/", (req, res) => {
-    try {
-        const { company, position, status } = req.body;
-
-        const application = addApplication(
-            company,
-            position,
-            status
-        );
-
-        res.status(201).json(application);
-    } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
-    }
-});
-
-// PUT: aggiorna una candidatura
-router.put("/:id", (req, res) => {
-    try {
-        const application = updateApplication(
-            req.params.id,
-            req.body
-        );
-
-        if (!application) {
-            return res.status(404).json({
-                error: "Application not found"
-            });
-        }
-
-        res.status(200).json(application);
-    } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
-    }
-});
-
-// DELETE: elimina una candidatura
-router.delete("/:id", (req, res) => {
-    const deleted = deleteApplication(req.params.id);
-
-    if (!deleted) {
-        return res.status(404).json({
-            error: "Application not found"
-        });
-    }
-
-    res.status(200).json({
-        message: "Application deleted successfully"
-    });
-});
+// DELETE: eliminazione candidatura
+router.delete("/:id", removeApplication);
 
 module.exports = router;
