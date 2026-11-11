@@ -1,144 +1,161 @@
 
-const fs = require("node:fs");
-const path = require("node:path");
+const pool = require("../config/database");
 
 const createApplication = require("../models/application");
 
-const DATA_DIR = path.join(__dirname, "../../data");
-const DATA_FILE = path.join(DATA_DIR, "applications.json");
-
-function loadApplications() {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, "[]", "utf8");
+// Converte una riga PostgreSQL nel formato utilizzato da WorkPilot
+function mapApplication(row) {
+    if (!row) {
+        return null;
     }
 
-    const data = fs.readFileSync(DATA_FILE, "utf8");
-
-    try {
-        const parsedData = JSON.parse(data);
-
-        if (!Array.isArray(parsedData)) {
-            throw new Error("Invalid applications data format");
-        }
-
-        return parsedData;
-    } catch (error) {
-        throw new Error(
-            `Unable to load applications: ${error.message}`
-        );
-    }
+    return {
+        id: row.id,
+        company: row.company,
+        position: row.position,
+        status: row.status,
+        appliedAt: row.applied_at.toISOString()
+    };
 }
 
-let applications = loadApplications();
-
-function saveApplications() {
-    fs.writeFileSync(
-        DATA_FILE,
-        JSON.stringify(applications, null, 4),
-        "utf8"
-    );
-}
-
-function addApplication(company, position, status = "applied") {
+// Aggiunge una nuova candidatura
+async function addApplication(company, position, status = "applied") {
     const application = createApplication(company, position, status);
 
-    applications.push(application);
-    saveApplications();
+    const result = await pool.query(
+        `INSERT INTO applications
+            (id, company, position, status, applied_at)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [
+            application.id,
+            application.company,
+            application.position,
+            application.status,
+            application.appliedAt
+        ]
+    );
 
-    return application;
+    return mapApplication(result.rows[0]);
 }
 
-function getAllApplications() {
-    return [...applications];
+// Recupera tutte le candidature
+async function getAllApplications() {
+    const result = await pool.query(
+        "SELECT * FROM applications ORDER BY applied_at ASC"
+    );
+
+    return result.rows.map(mapApplication);
 }
 
-function getApplicationById(id) {
-    return applications.find(
-        application => application.id === id
-    ) || null;
+// Recupera una candidatura tramite ID
+async function getApplicationById(id) {
+    const result = await pool.query(
+        "SELECT * FROM applications WHERE id = $1",
+        [id]
+    );
+
+    return mapApplication(result.rows[0]);
 }
 
-function updateApplication(id, updates) {
-    const application = getApplicationById(id);
+// Aggiorna una candidatura
+async function updateApplication(id, updates) {
+    const application = await getApplicationById(id);
 
     if (!application) {
         return null;
     }
 
+    // Riutilizza la validazione già presente nel modello
     const updatedData = createApplication(
         updates.company ?? application.company,
         updates.position ?? application.position,
         updates.status ?? application.status
     );
 
-    application.company = updatedData.company;
-    application.position = updatedData.position;
-    application.status = updatedData.status;
-
-    saveApplications();
-
-    return application;
-}
-
-function deleteApplication(id) {
-    const index = applications.findIndex(
-        application => application.id === id
+    const result = await pool.query(
+        `UPDATE applications
+         SET company = $1,
+             position = $2,
+             status = $3
+         WHERE id = $4
+         RETURNING *`,
+        [
+            updatedData.company,
+            updatedData.position,
+            updatedData.status,
+            id
+        ]
     );
 
-    if (index === -1) {
-        return false;
-    }
-
-    applications.splice(index, 1);
-    saveApplications();
-
-    return true;
+    return mapApplication(result.rows[0]);
 }
 
+// Elimina una candidatura
+async function deleteApplication(id) {
+    const result = await pool.query(
+        "DELETE FROM applications WHERE id = $1 RETURNING id",
+        [id]
+    );
 
-function listApplications({
+    return result.rowCount > 0;
+}
+
+// Recupera le candidature con filtri e paginazione
+async function listApplications({
     status,
     company,
     page = 1,
     limit = 10
 } = {}) {
-    let results = [...applications];
+    const conditions = [];
+    const values = [];
 
-    // Filtra per stato
+    // Filtro per stato
     if (status) {
-        results = results.filter(
-            application => application.status === status
-        );
+        values.push(status);
+        conditions.push(`status = $${values.length}`);
     }
 
-    // Cerca un'azienda ignorando maiuscole e minuscole
+    // Ricerca azienda ignorando maiuscole e minuscole
     if (company) {
-        const searchTerm = company.toLowerCase();
-
-        results = results.filter(
-            application =>
-                application.company.toLowerCase().includes(searchTerm)
-        );
+        values.push(`%${company}%`);
+        conditions.push(`company ILIKE $${values.length}`);
     }
 
-    // Calcola il numero totale di risultati prima della paginazione
-    const total = results.length;
+    const whereClause = conditions.length > 0
+        ? `WHERE ${conditions.join(" AND ")}`
+        : "";
 
+    // Conta i risultati prima della paginazione
+    const countResult = await pool.query(
+        `SELECT COUNT(*)::int AS total
+         FROM applications
+         ${whereClause}`,
+        values
+    );
+
+    const total = countResult.rows[0].total;
     const totalPages = Math.ceil(total / limit);
 
-    // Calcola da quale elemento iniziare
-    const startIndex = (page - 1) * limit;
+    // Calcola l'offset
+    const offset = (page - 1) * limit;
 
-    // Seleziona soltanto gli elementi della pagina richiesta
-    const paginatedResults = results.slice(
-        startIndex,
-        startIndex + limit
+    // Aggiunge i parametri della paginazione
+    const paginationValues = [...values, limit, offset];
+
+    const result = await pool.query(
+        `SELECT *
+         FROM applications
+         ${whereClause}
+         ORDER BY applied_at ASC
+         LIMIT $${values.length + 1}
+         OFFSET $${values.length + 2}`,
+        paginationValues
     );
 
     return {
-        data: paginatedResults,
+        data: result.rows.map(mapApplication),
         pagination: {
             page,
             limit,
@@ -147,7 +164,6 @@ function listApplications({
         }
     };
 }
-
 
 module.exports = {
     addApplication,

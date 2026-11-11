@@ -1,19 +1,18 @@
 
 const {
     addApplication,
-    getAllApplications,
     listApplications,
     getApplicationById,
     updateApplication,
     deleteApplication
 } = require("../services/applicationService");
 
-// GET: recupera tutte le candidature
-function getApplications(req, res, next) {
+// GET: recupera tutte le candidature con filtri e paginazione
+async function getApplications(req, res, next) {
     try {
         const filters = res.locals.validatedQuery;
 
-        const result = listApplications(filters);
+        const result = await listApplications(filters);
 
         res.status(200).json(result);
     } catch (error) {
@@ -22,9 +21,9 @@ function getApplications(req, res, next) {
 }
 
 // GET: recupera una candidatura tramite ID
-function getApplication(req, res, next) {
+async function getApplication(req, res, next) {
     try {
-        const application = getApplicationById(req.params.id);
+        const application = await getApplicationById(req.params.id);
 
         if (!application) {
             const error = new Error("Application not found");
@@ -39,11 +38,11 @@ function getApplication(req, res, next) {
 }
 
 // POST: crea una nuova candidatura
-function createApplication(req, res, next) {
+async function createApplication(req, res, next) {
     try {
         const { company, position, status } = req.body;
 
-        const application = addApplication(
+        const application = await addApplication(
             company,
             position,
             status
@@ -56,9 +55,9 @@ function createApplication(req, res, next) {
 }
 
 // PUT: aggiorna una candidatura
-function editApplication(req, res, next) {
+async function editApplication(req, res, next) {
     try {
-        const application = updateApplication(
+        const application = await updateApplication(
             req.params.id,
             req.body
         );
@@ -76,9 +75,9 @@ function editApplication(req, res, next) {
 }
 
 // DELETE: elimina una candidatura
-function removeApplication(req, res, next) {
+async function removeApplication(req, res, next) {
     try {
-        const deleted = deleteApplication(req.params.id);
+        const deleted = await deleteApplication(req.params.id);
 
         if (!deleted) {
             const error = new Error("Application not found");

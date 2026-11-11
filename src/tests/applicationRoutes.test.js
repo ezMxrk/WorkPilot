@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const request = require("supertest");
+const { randomUUID } = require("node:crypto");
 
 const app = require("../app");
 
@@ -13,20 +14,26 @@ test("GET / should return API information", async () => {
 });
 
 test("POST should create an application", async () => {
-    const response = await request(app)
-        .post("/api/applications")
-        .send({
-            company: "Google",
-            position: "Backend Developer"
-        });
+    let id;
 
-    assert.equal(response.status, 201);
-    assert.equal(response.body.company, "Google");
-    assert.equal(response.body.position, "Backend Developer");
+    try {
+        const response = await request(app)
+            .post("/api/applications")
+            .send({
+                company: "Google",
+                position: "Backend Developer"
+            });
 
-    await request(app).delete(
-        `/api/applications/${response.body.id}`
-    );
+        assert.equal(response.status, 201);
+        assert.equal(response.body.company, "Google");
+        assert.equal(response.body.position, "Backend Developer");
+
+        id = response.body.id;
+    } finally {
+        if (id) {
+            await request(app).delete(`/api/applications/${id}`);
+        }
+    }
 });
 
 test("POST should reject invalid application data", async () => {
@@ -42,44 +49,56 @@ test("POST should reject invalid application data", async () => {
 });
 
 test("GET should retrieve an application by ID", async () => {
-    const created = await request(app)
-        .post("/api/applications")
-        .send({
-            company: "Microsoft",
-            position: "Software Engineer"
-        });
+    let id;
 
-    const id = created.body.id;
+    try {
+        const created = await request(app)
+            .post("/api/applications")
+            .send({
+                company: "Microsoft",
+                position: "Software Engineer"
+            });
 
-    const response = await request(app)
-        .get(`/api/applications/${id}`);
+        id = created.body.id;
 
-    assert.equal(response.status, 200);
-    assert.equal(response.body.id, id);
+        const response = await request(app)
+            .get(`/api/applications/${id}`);
 
-    await request(app).delete(`/api/applications/${id}`);
+        assert.equal(response.status, 200);
+        assert.equal(response.body.id, id);
+    } finally {
+        if (id) {
+            await request(app).delete(`/api/applications/${id}`);
+        }
+    }
 });
 
 test("PUT should update an application", async () => {
-    const created = await request(app)
-        .post("/api/applications")
-        .send({
-            company: "Amazon",
-            position: "Developer"
-        });
+    let id;
 
-    const id = created.body.id;
+    try {
+        const created = await request(app)
+            .post("/api/applications")
+            .send({
+                company: "Amazon",
+                position: "Developer"
+            });
 
-    const response = await request(app)
-        .put(`/api/applications/${id}`)
-        .send({
-            status: "interview"
-        });
+        id = created.body.id;
 
-    assert.equal(response.status, 200);
-    assert.equal(response.body.status, "interview");
+        const response = await request(app)
+            .put(`/api/applications/${id}`)
+            .send({
+                status: "interview"
+            });
 
-    await request(app).delete(`/api/applications/${id}`);
+        assert.equal(response.status, 200);
+        assert.equal(response.body.status, "interview");
+    } finally {
+        if (id) {
+            await request(app).delete(`/api/applications/${id}`);
+        }
+    }
 });
 
 test("DELETE should remove an application", async () => {
@@ -104,8 +123,10 @@ test("DELETE should remove an application", async () => {
 });
 
 test("GET should return 404 for a nonexistent application", async () => {
+    const nonexistentId = randomUUID();
+
     const response = await request(app)
-        .get("/api/applications/nonexistent-id");
+        .get(`/api/applications/${nonexistentId}`);
 
     assert.equal(response.status, 404);
 });
