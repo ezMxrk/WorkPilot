@@ -8,7 +8,6 @@ function notFound(req, res, next) {
 }
 
 function errorHandler(error, req, res, next) {
-    // Se la risposta è già stata inviata, delega a Express
     if (res.headersSent) {
         return next(error);
     }
@@ -20,9 +19,15 @@ function errorHandler(error, req, res, next) {
             ? "Internal server error"
             : error.message;
 
-    res.status(statusCode).json({
+    const response = {
         error: message
-    });
+    };
+
+    if (error.details) {
+        response.details = error.details;
+    }
+
+    res.status(statusCode).json(response);
 }
 
 module.exports = {

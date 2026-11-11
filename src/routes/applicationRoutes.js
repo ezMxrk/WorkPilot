@@ -11,17 +11,32 @@ const {
     removeApplication
 } = require("../controllers/applicationController");
 
+const validateRequest = require("../middleware/validateRequest");
+
+const {
+    createApplicationSchema,
+    updateApplicationSchema
+} = require("../validators/applicationValidator");
+
 // GET: tutte le candidature
 router.get("/", getApplications);
 
 // POST: nuova candidatura
-router.post("/", createApplication);
+router.post(
+    "/",
+    validateRequest(createApplicationSchema),
+    createApplication
+);
 
 // GET: candidatura tramite ID
 router.get("/:id", getApplication);
 
 // PUT: aggiornamento candidatura
-router.put("/:id", editApplication);
+router.put(
+    "/:id",
+    validateRequest(updateApplicationSchema),
+    editApplication
+);
 
 // DELETE: eliminazione candidatura
 router.delete("/:id", removeApplication);
