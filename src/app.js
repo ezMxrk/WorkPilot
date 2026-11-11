@@ -5,9 +5,14 @@ const swaggerUi = require("swagger-ui-express");
 const applicationRoutes = require("./routes/applicationRoutes");
 const openApiDocument = require("./docs/openapi");
 
+const {
+    notFound,
+    errorHandler
+} = require("./middleware/errorHandler");
+
 const app = express();
 
-// Permette al server di leggere richieste JSON
+// Middleware per leggere richieste JSON
 app.use(express.json());
 
 // Documentazione Swagger
@@ -28,11 +33,10 @@ app.get("/", (req, res) => {
 // Registrazione delle rotte
 app.use("/api/applications", applicationRoutes);
 
-// Gestione degli endpoint inesistenti
-app.use((req, res) => {
-    res.status(404).json({
-        error: "Route not found"
-    });
-});
+// Gestione delle rotte inesistenti
+app.use(notFound);
+
+// Gestione centralizzata degli errori
+app.use(errorHandler);
 
 module.exports = app;

@@ -1,15 +1,22 @@
 
 const { randomUUID } = require("node:crypto");
 
+function createValidationError(message) {
+    const error = new Error(message);
+    error.statusCode = 400;
+
+    return error;
+}
+
 function createApplication(company, position, status = "applied") {
 
     // Verifica che azienda e posizione siano stringhe non vuote
     if (typeof company !== "string" || !company.trim()) {
-        throw new Error("Company is required");
+        throw createValidationError("Company is required");
     }
 
     if (typeof position !== "string" || !position.trim()) {
-        throw new Error("Position is required");
+        throw createValidationError("Position is required");
     }
 
     // Rimuove gli spazi superflui
@@ -25,7 +32,7 @@ function createApplication(company, position, status = "applied") {
     ];
 
     if (!validStatuses.includes(status)) {
-        throw new Error("Invalid application status");
+        throw createValidationError("Invalid application status");
     }
 
     return {

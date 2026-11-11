@@ -8,27 +8,34 @@ const {
 } = require("../services/applicationService");
 
 // GET: recupera tutte le candidature
-function getApplications(req, res) {
-    const applications = getAllApplications();
-
-    res.status(200).json(applications);
+function getApplications(req, res, next) {
+    try {
+        const applications = getAllApplications();
+        res.status(200).json(applications);
+    } catch (error) {
+        next(error);
+    }
 }
 
 // GET: recupera una candidatura tramite ID
-function getApplication(req, res) {
-    const application = getApplicationById(req.params.id);
+function getApplication(req, res, next) {
+    try {
+        const application = getApplicationById(req.params.id);
 
-    if (!application) {
-        return res.status(404).json({
-            error: "Application not found"
-        });
+        if (!application) {
+            const error = new Error("Application not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json(application);
+    } catch (error) {
+        next(error);
     }
-
-    res.status(200).json(application);
 }
 
 // POST: crea una nuova candidatura
-function createApplication(req, res) {
+function createApplication(req, res, next) {
     try {
         const { company, position, status } = req.body;
 
@@ -40,14 +47,12 @@ function createApplication(req, res) {
 
         res.status(201).json(application);
     } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
+        next(error);
     }
 }
 
 // PUT: aggiorna una candidatura
-function editApplication(req, res) {
+function editApplication(req, res, next) {
     try {
         const application = updateApplication(
             req.params.id,
@@ -55,32 +60,34 @@ function editApplication(req, res) {
         );
 
         if (!application) {
-            return res.status(404).json({
-                error: "Application not found"
-            });
+            const error = new Error("Application not found");
+            error.statusCode = 404;
+            throw error;
         }
 
         res.status(200).json(application);
     } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
+        next(error);
     }
 }
 
 // DELETE: elimina una candidatura
-function removeApplication(req, res) {
-    const deleted = deleteApplication(req.params.id);
+function removeApplication(req, res, next) {
+    try {
+        const deleted = deleteApplication(req.params.id);
 
-    if (!deleted) {
-        return res.status(404).json({
-            error: "Application not found"
+        if (!deleted) {
+            const error = new Error("Application not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json({
+            message: "Application deleted successfully"
         });
+    } catch (error) {
+        next(error);
     }
-
-    res.status(200).json({
-        message: "Application deleted successfully"
-    });
 }
 
 module.exports = {
