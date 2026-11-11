@@ -1,12 +1,21 @@
 
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
 
 const applicationRoutes = require("./routes/applicationRoutes");
+const openApiDocument = require("./docs/openapi");
 
 const app = express();
 
 // Permette al server di leggere richieste JSON
 app.use(express.json());
+
+// Documentazione Swagger
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(openApiDocument)
+);
 
 // Endpoint principale
 app.get("/", (req, res) => {

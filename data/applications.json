@@ -12,5 +12,19 @@
         "position": "Frontend Developer",
         "status": "applied",
         "appliedAt": "2026-11-11T14:00:24.464Z"
+    },
+    {
+        "id": "feb0cc29-a9d4-4961-9fde-787fdab4ea0e",
+        "company": "Google",
+        "position": "Junior Software Engineer",
+        "status": "applied",
+        "appliedAt": "2026-11-11T14:23:16.779Z"
+    },
+    {
+        "id": "6b5efa14-0363-4e31-99d7-a24df9b1b9ca",
+        "company": "Google",
+        "position": "Junior Software Engineer",
+        "status": "applied",
+        "appliedAt": "2026-11-11T14:23:31.310Z"
     }
 ]
