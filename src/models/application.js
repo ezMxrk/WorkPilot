@@ -1,10 +1,20 @@
+
 const { randomUUID } = require("node:crypto");
 
 function createApplication(company, position, status = "applied") {
 
-    if (!company || !position) {
-        throw new Error("Company and position are required");
+    // Verifica che azienda e posizione siano stringhe non vuote
+    if (typeof company !== "string" || !company.trim()) {
+        throw new Error("Company is required");
     }
+
+    if (typeof position !== "string" || !position.trim()) {
+        throw new Error("Position is required");
+    }
+
+    // Rimuove gli spazi superflui
+    company = company.trim();
+    position = position.trim();
 
     const validStatuses = [
         "saved",

@@ -5,5 +5,12 @@
         "position": "Programmatore",
         "status": "applied",
         "appliedAt": "2026-11-11T13:54:44.752Z"
+    },
+    {
+        "id": "ca5a35c8-7cba-45f6-9f5a-f974be47ce2d",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "status": "applied",
+        "appliedAt": "2026-11-11T14:00:24.464Z"
     }
 ]

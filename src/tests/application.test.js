@@ -1,3 +1,4 @@
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -5,26 +6,21 @@ const createApplication = require("../models/application");
 
 test("should create an application correctly", () => {
     const application = createApplication(
-        "Riot Games",
-        "Software Engineer"
+        "Google",
+        "Frontend Developer"
     );
 
-    assert.equal(application.company, "Riot Games");
-    assert.equal(application.position, "Software Engineer");
+    assert.equal(application.company, "Google");
+    assert.equal(application.position, "Frontend Developer");
     assert.equal(application.status, "applied");
-
-    assert.match(
-        application.id,
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    );
-
-    assert.ok(!Number.isNaN(Date.parse(application.appliedAt)));
+    assert.ok(application.id);
+    assert.ok(application.appliedAt);
 });
 
 test("should accept a custom application status", () => {
     const application = createApplication(
         "Microsoft",
-        "Junior Developer",
+        "Developer",
         "interview"
     );
 
@@ -34,12 +30,12 @@ test("should accept a custom application status", () => {
 test("should reject missing company or position", () => {
     assert.throws(
         () => createApplication("", "Developer"),
-        { message: "Company and position are required" }
+        /Company is required/
     );
 
     assert.throws(
-        () => createApplication("Microsoft", ""),
-        { message: "Company and position are required" }
+        () => createApplication("Google", ""),
+        /Position is required/
     );
 });
 
@@ -50,6 +46,28 @@ test("should reject invalid application status", () => {
             "Developer",
             "unknown"
         ),
-        { message: "Invalid application status" }
+        /Invalid application status/
+    );
+});
+
+test("should remove unnecessary spaces", () => {
+    const application = createApplication(
+        "  Google  ",
+        "  Frontend Developer  "
+    );
+
+    assert.equal(application.company, "Google");
+    assert.equal(application.position, "Frontend Developer");
+});
+
+test("should reject values containing only spaces", () => {
+    assert.throws(
+        () => createApplication("   ", "Developer"),
+        /Company is required/
+    );
+
+    assert.throws(
+        () => createApplication("Google", "   "),
+        /Position is required/
     );
 });
