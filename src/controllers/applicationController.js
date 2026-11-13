@@ -7,12 +7,15 @@ const {
     deleteApplication
 } = require("../services/applicationService");
 
-// GET: recupera tutte le candidature con filtri e paginazione
+// GET: recupera le candidature dell'utente con filtri e paginazione
 async function getApplications(req, res, next) {
     try {
         const filters = res.locals.validatedQuery;
 
-        const result = await listApplications(filters);
+        const result = await listApplications({
+            ...filters,
+            userId: req.user.id
+        });
 
         res.status(200).json(result);
     } catch (error) {
@@ -23,7 +26,10 @@ async function getApplications(req, res, next) {
 // GET: recupera una candidatura tramite ID
 async function getApplication(req, res, next) {
     try {
-        const application = await getApplicationById(req.params.id);
+        const application = await getApplicationById(
+            req.params.id,
+            req.user.id
+        );
 
         if (!application) {
             const error = new Error("Application not found");
@@ -45,7 +51,8 @@ async function createApplication(req, res, next) {
         const application = await addApplication(
             company,
             position,
-            status
+            status,
+            req.user.id
         );
 
         res.status(201).json(application);
@@ -59,7 +66,8 @@ async function editApplication(req, res, next) {
     try {
         const application = await updateApplication(
             req.params.id,
-            req.body
+            req.body,
+            req.user.id
         );
 
         if (!application) {
@@ -77,7 +85,10 @@ async function editApplication(req, res, next) {
 // DELETE: elimina una candidatura
 async function removeApplication(req, res, next) {
     try {
-        const deleted = await deleteApplication(req.params.id);
+        const deleted = await deleteApplication(
+            req.params.id,
+            req.user.id
+        );
 
         if (!deleted) {
             const error = new Error("Application not found");

@@ -6,6 +6,7 @@ const swaggerUi = require("swagger-ui-express");
 
 const applicationRoutes = require("./routes/applicationRoutes");
 const openApiDocument = require("./docs/openapi");
+const authRoutes = require("./routes/authRoutes");
 
 const {
     notFound,
@@ -34,11 +35,24 @@ const apiLimiter = rateLimit({
     }
 });
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: "Too many authentication attempts. Please try again later."
+    }
+});
+
 // Applica il limite alle API delle candidature
 app.use("/api/applications", apiLimiter);
 
 // Middleware per leggere richieste JSON
 app.use(express.json());
+
+// Limita i tentativi di registrazione e login
+app.use("/api/auth", authLimiter, authRoutes);
 
 // Documentazione Swagger
 app.use(

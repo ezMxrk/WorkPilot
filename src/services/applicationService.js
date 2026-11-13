@@ -1,7 +1,13 @@
 
 const pool = require("../config/database");
-
 const createApplication = require("../models/application");
+
+// Verifica che sia stato specificato un proprietario
+function validateUserId(userId) {
+    if (!userId) {
+        throw new Error("Authenticated user ID is required.");
+    }
+}
 
 // Converte una riga PostgreSQL nel formato utilizzato da WorkPilot
 function mapApplication(row) {
@@ -18,73 +24,95 @@ function mapApplication(row) {
     };
 }
 
-// Aggiunge una nuova candidatura
-async function addApplication(company, position, status = "applied") {
-    const application = createApplication(company, position, status);
+// Aggiunge una candidatura appartenente all'utente autenticato
+async function addApplication(company, position, status, userId) {
+    validateUserId(userId);
+
+    const application = createApplication(
+        company,
+        position,
+        status ?? "applied"
+    );
 
     const result = await pool.query(
         `INSERT INTO applications
-            (id, company, position, status, applied_at)
-         VALUES ($1, $2, $3, $4, $5)
+            (id, company, position, status, applied_at, user_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
         [
             application.id,
             application.company,
             application.position,
             application.status,
-            application.appliedAt
+            application.appliedAt,
+            userId
         ]
     );
 
     return mapApplication(result.rows[0]);
 }
 
-// Recupera tutte le candidature
-async function getAllApplications() {
+// Recupera tutte le candidature di un utente
+async function getAllApplications(userId) {
+    validateUserId(userId);
+
     const result = await pool.query(
-        "SELECT * FROM applications ORDER BY applied_at ASC"
+        `SELECT *
+         FROM applications
+         WHERE user_id = $1
+         ORDER BY applied_at ASC`,
+        [userId]
     );
 
     return result.rows.map(mapApplication);
 }
 
-// Recupera una candidatura tramite ID
-async function getApplicationById(id) {
+// Recupera una candidatura verificandone il proprietario
+async function getApplicationById(id, userId) {
+    validateUserId(userId);
+
     const result = await pool.query(
-        "SELECT * FROM applications WHERE id = $1",
-        [id]
+        `SELECT *
+         FROM applications
+         WHERE id = $1 AND user_id = $2`,
+        [id, userId]
     );
 
     return mapApplication(result.rows[0]);
 }
 
-// Aggiorna una candidatura
+// Aggiorna esclusivamente le candidature dell'utente
+async function updateApplication(id, updates, userId) {
+    validateUserId(userId);
 
-async function updateApplication(id, updates) {
     const result = await pool.query(
         `UPDATE applications
          SET company = COALESCE($1, company),
              position = COALESCE($2, position),
              status = COALESCE($3, status)
-         WHERE id = $4
+         WHERE id = $4 AND user_id = $5
          RETURNING *`,
         [
             updates.company ?? null,
             updates.position ?? null,
             updates.status ?? null,
-            id
+            id,
+            userId
         ]
     );
 
     return mapApplication(result.rows[0]);
 }
 
+// Elimina esclusivamente le candidature dell'utente
+async function deleteApplication(id, userId) {
+    validateUserId(userId);
 
-// Elimina una candidatura
-async function deleteApplication(id) {
     const result = await pool.query(
-        "DELETE FROM applications WHERE id = $1 RETURNING id",
-        [id]
+        `DELETE FROM applications
+         WHERE id = $1 AND user_id = $2
+         RETURNING id`,
+        [id, userId]
     );
 
     return result.rowCount > 0;
@@ -92,31 +120,29 @@ async function deleteApplication(id) {
 
 // Recupera le candidature con filtri e paginazione
 async function listApplications({
+    userId,
     status,
     company,
     page = 1,
     limit = 10
 } = {}) {
-    const conditions = [];
-    const values = [];
+    validateUserId(userId);
 
-    // Filtro per stato
+    const conditions = ["user_id = $1"];
+    const values = [userId];
+
     if (status) {
         values.push(status);
         conditions.push(`status = $${values.length}`);
     }
 
-    // Ricerca azienda ignorando maiuscole e minuscole
     if (company) {
         values.push(`%${company}%`);
         conditions.push(`company ILIKE $${values.length}`);
     }
 
-    const whereClause = conditions.length > 0
-        ? `WHERE ${conditions.join(" AND ")}`
-        : "";
+    const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
-    // Conta i risultati prima della paginazione
     const countResult = await pool.query(
         `SELECT COUNT(*)::int AS total
          FROM applications
@@ -126,11 +152,8 @@ async function listApplications({
 
     const total = countResult.rows[0].total;
     const totalPages = Math.ceil(total / limit);
-
-    // Calcola l'offset
     const offset = (page - 1) * limit;
 
-    // Aggiunge i parametri della paginazione
     const paginationValues = [...values, limit, offset];
 
     const result = await pool.query(

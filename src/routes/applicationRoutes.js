@@ -3,6 +3,8 @@ const express = require("express");
 
 const router = express.Router();
 
+const authenticateToken = require("../middleware/authenticateToken");
+
 // Controllers
 const {
     getApplications,
@@ -22,6 +24,9 @@ const {
     updateApplicationSchema,
     listApplicationsSchema
 } = require("../validators/applicationValidator");
+
+// Tutte le route richiedono autenticazione
+router.use(authenticateToken);
 
 // GET: tutte le candidature con filtri e paginazione
 router.get(
@@ -51,6 +56,3 @@ router.put(
 router.delete("/:id", removeApplication);
 
 module.exports = router;
-
-
-
