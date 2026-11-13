@@ -1,13 +1,21 @@
+
 {
   "name": "workpilot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A RESTful application tracking API built with Node.js, Express and PostgreSQL.",
+  "main": "src/index.js",
   "scripts": {
-    "test": "node --test",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
   },
-  "keywords": [],
+  "keywords": [
+    "nodejs",
+    "express",
+    "postgresql",
+    "rest-api",
+    "application-tracking"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
