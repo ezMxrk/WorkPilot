@@ -1,5 +1,7 @@
 
 const express = require("express");
+const helmet = require("helmet");
+const { rateLimit } = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 
 const applicationRoutes = require("./routes/applicationRoutes");
@@ -11,6 +13,29 @@ const {
 } = require("./middleware/errorHandler");
 
 const app = express();
+
+// Protezione delle intestazioni HTTP
+app.use(
+    helmet({
+        // La CSP verrà configurata separatamente
+        // per mantenere compatibile Swagger UI.
+        contentSecurityPolicy: false
+    })
+);
+
+// Limita le richieste alle API
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: "Too many requests, please try again later."
+    }
+});
+
+// Applica il limite alle API delle candidature
+app.use("/api/applications", apiLimiter);
 
 // Middleware per leggere richieste JSON
 app.use(express.json());
