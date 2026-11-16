@@ -1,7 +1,8 @@
 
 const {
     registerUser,
-    loginUser
+    loginUser,
+    getUserById
 } = require("../services/authService");
 
 async function register(req, res, next) {
@@ -36,7 +37,25 @@ async function login(req, res, next) {
     }
 }
 
+// Restituisce il profilo dell'utente autenticato
+async function getMe(req, res, next) {
+    try {
+        const user = await getUserById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                error: "User not found."
+            });
+        }
+
+        return res.status(200).json({ user });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     register,
-    login
+    login,
+    getMe
 };

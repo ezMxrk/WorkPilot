@@ -57,8 +57,20 @@ async function loginUser({ email, password }) {
     };
 }
 
+// Recupera il profilo dell'utente tramite il suo ID
+async function getUserById(userId) {
+    const result = await pool.query(
+        `SELECT id, email, created_at
+         FROM users
+         WHERE id = $1`,
+        [userId]
+    );
+
+    return result.rows[0] || null;
+}
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    getUserById
 };
-
