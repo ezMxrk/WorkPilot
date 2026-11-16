@@ -1,0 +1,139 @@
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    background: #0b0e14;
+    color: #f5f5f5;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 430px;
+    padding: 38px;
+    background: #131821;
+    border: 1px solid #252d3a;
+    border-radius: 18px;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #f5f5f5;
+    font-size: 21px;
+    font-weight: 700;
+    text-decoration: none;
+    margin-bottom: 38px;
+}
+
+.auth-brand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: #635bff;
+    color: white;
+}
+
+.auth-heading {
+    margin-bottom: 28px;
+}
+
+.auth-heading h1 {
+    margin: 0 0 9px;
+    font-size: 27px;
+}
+
+.auth-heading p {
+    margin: 0;
+    color: #929baa;
+    font-size: 14px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-field label {
+    font-size: 13px;
+    color: #c5cbd5;
+}
+
+.auth-field input {
+    width: 100%;
+    padding: 13px 14px;
+    color: white;
+    background: #0d121a;
+    border: 1px solid #303949;
+    border-radius: 9px;
+    outline: none;
+}
+
+.auth-field input:focus {
+    border-color: #756cff;
+}
+
+.auth-submit {
+    margin-top: 7px;
+    padding: 13px;
+    border: none;
+    border-radius: 9px;
+    background: #635bff;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.auth-error {
+    padding: 11px 13px;
+    color: #ff8585;
+    background: #381e26;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.auth-switch {
+    margin-top: 24px;
+    text-align: center;
+    color: #929baa;
+    font-size: 13px;
+}
+
+.auth-switch a {
+    color: #938cff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer {
+    margin-top: 24px;
+    color: #626c7c;
+    font-size: 12px;
+}
+
+.auth-loading {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #0b0e14;
+    color: white;
+}
