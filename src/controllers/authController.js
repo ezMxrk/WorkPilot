@@ -1,8 +1,8 @@
-
 const {
     registerUser,
     loginUser,
-    getUserById
+    getUserById,
+    changeUserPassword
 } = require("../services/authService");
 
 async function register(req, res, next) {
@@ -37,7 +37,6 @@ async function login(req, res, next) {
     }
 }
 
-// Restituisce il profilo dell'utente autenticato
 async function getMe(req, res, next) {
     try {
         const user = await getUserById(req.user.id);
@@ -54,8 +53,36 @@ async function getMe(req, res, next) {
     }
 }
 
+async function changePassword(req, res, next) {
+    try {
+        const {
+            currentPassword,
+            newPassword
+        } = req.body;
+
+        const passwordChanged = await changeUserPassword(
+            req.user.id,
+            currentPassword,
+            newPassword
+        );
+
+        if (!passwordChanged) {
+            return res.status(400).json({
+                error: "Current password is incorrect."
+            });
+        }
+
+        return res.status(200).json({
+            message: "Password updated successfully."
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     register,
     login,
-    getMe
+    getMe,
+    changePassword
 };

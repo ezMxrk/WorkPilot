@@ -1,4 +1,3 @@
-
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -57,7 +56,6 @@ async function loginUser({ email, password }) {
     };
 }
 
-// Recupera il profilo dell'utente tramite il suo ID
 async function getUserById(userId) {
     const result = await pool.query(
         `SELECT id, email, created_at
@@ -69,8 +67,42 @@ async function getUserById(userId) {
     return result.rows[0] || null;
 }
 
+async function changeUserPassword(userId, currentPassword, newPassword) {
+    const result = await pool.query(
+        `SELECT password_hash
+         FROM users
+         WHERE id = $1`,
+        [userId]
+    );
+
+    if (result.rows.length === 0) {
+        return false;
+    }
+
+    const passwordMatches = await bcrypt.compare(
+        currentPassword,
+        result.rows[0].password_hash
+    );
+
+    if (!passwordMatches) {
+        return false;
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    await pool.query(
+        `UPDATE users
+         SET password_hash = $1
+         WHERE id = $2`,
+        [newPasswordHash, userId]
+    );
+
+    return true;
+}
+
 module.exports = {
     registerUser,
     loginUser,
-    getUserById
+    getUserById,
+    changeUserPassword
 };
