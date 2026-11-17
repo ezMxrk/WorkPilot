@@ -1,0 +1,114 @@
+/* Account settings */
+.settings-page {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.settings-card {
+    width: 100%;
+    max-width: 760px;
+    padding: 26px;
+}
+
+.settings-security-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    color: #5266d8;
+    background: #eef0ff;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 520px;
+    margin-top: 24px;
+}
+
+.settings-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.settings-form input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 13px;
+    border: 1px solid #dfe3eb;
+    border-radius: 9px;
+    outline: none;
+    color: #202939;
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.settings-form input:focus {
+    border-color: #6675e8;
+    box-shadow: 0 0 0 3px rgba(102, 117, 232, 0.13);
+}
+
+.settings-form input::placeholder {
+    color: #98a2b3;
+    font-weight: 400;
+}
+
+.settings-form-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 4px;
+}
+
+.settings-form-actions .primary-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.settings-success {
+    padding: 12px 14px;
+    border: 1px solid #b7e4c7;
+    border-radius: 8px;
+    color: #176b3a;
+    background: #effaf2;
+    font-size: 13px;
+}
+
+.settings-security-note {
+    max-width: 760px;
+    padding: 18px 20px;
+    border: 1px solid #e6e9f0;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.settings-security-note strong {
+    color: #344054;
+    font-size: 13px;
+}
+
+.settings-security-note p {
+    margin: 7px 0 0;
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .settings-card {
+        padding: 18px;
+    }
+
+    .settings-card .panel-heading {
+        align-items: flex-start;
+    }
+}
