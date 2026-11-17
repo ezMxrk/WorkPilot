@@ -1,3 +1,4 @@
+
 const { z } = require("zod");
 
 const passwordSchema = z.string()
@@ -7,20 +8,18 @@ const passwordSchema = z.string()
         "Password must not exceed 72 bytes."
     );
 
-const registerSchema = z.object({
-    email: z.string()
-        .trim()
-        .email("A valid email address is required.")
-        .toLowerCase(),
+const emailSchema = z.string()
+    .trim()
+    .email("A valid email address is required.")
+    .toLowerCase();
 
+const registerSchema = z.object({
+    email: emailSchema,
     password: passwordSchema
 });
 
 const loginSchema = z.object({
-    email: z.string()
-        .trim()
-        .email("A valid email address is required.")
-        .toLowerCase(),
+    email: emailSchema,
 
     password: z.string()
         .min(1, "Password is required.")
@@ -48,8 +47,30 @@ const changePasswordSchema = z.object({
     }
 );
 
+const forgotPasswordSchema = z.object({
+    email: emailSchema
+});
+
+const resetPasswordSchema = z.object({
+    token: z.string()
+        .length(64, "Invalid password reset token."),
+
+    newPassword: passwordSchema,
+
+    confirmPassword: z.string()
+        .min(1, "Password confirmation is required.")
+}).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+        message: "Password confirmation does not match.",
+        path: ["confirmPassword"]
+    }
+);
+
 module.exports = {
     registerSchema,
     loginSchema,
-    changePasswordSchema
+    changePasswordSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema
 };

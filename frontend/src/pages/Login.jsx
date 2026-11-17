@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import AuthLayout from "../layouts/AuthLayout";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +16,7 @@ export default function Login() {
 
     async function handleSubmit(event) {
         event.preventDefault();
+
         setError("");
         setSubmitting(true);
 
@@ -40,6 +42,7 @@ export default function Login() {
             <form className="auth-form" onSubmit={handleSubmit}>
                 <div className="auth-field">
                     <label htmlFor="email">Email address</label>
+
                     <input
                         id="email"
                         type="email"
@@ -53,6 +56,7 @@ export default function Login() {
 
                 <div className="auth-field">
                     <label htmlFor="password">Password</label>
+
                     <input
                         id="password"
                         type="password"
@@ -64,7 +68,17 @@ export default function Login() {
                     />
                 </div>
 
-                {error && <div className="auth-error">{error}</div>}
+                <div className="auth-forgot">
+                    <Link to="/forgot-password">
+                        Forgot password?
+                    </Link>
+                </div>
+
+                {error && (
+                    <div className="auth-error">
+                        {error}
+                    </div>
+                )}
 
                 <button
                     className="auth-submit"
@@ -76,7 +90,8 @@ export default function Login() {
             </form>
 
             <div className="auth-switch">
-                Don't have an account? <Link to="/register">Create one</Link>
+                Don't have an account?{" "}
+                <Link to="/register">Create one</Link>
             </div>
         </AuthLayout>
     );

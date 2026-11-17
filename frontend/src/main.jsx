@@ -6,6 +6,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import App from "./App";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -44,12 +47,25 @@ function Root() {
                 }
             />
 
+            <Route
+                path="/forgot-password"
+                element={<ForgotPassword />}
+            />
+
+            <Route
+                path="/reset-password"
+                element={<ResetPassword />}
+            />
+
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<App />} />
                 <Route path="/applications" element={<App />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route
+                path="*"
+                element={<Navigate to="/dashboard" replace />}
+            />
         </Routes>
     );
 }

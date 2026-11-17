@@ -54,6 +54,7 @@
     margin: 0;
     color: #929baa;
     font-size: 14px;
+    line-height: 1.6;
 }
 
 .auth-form {
@@ -96,6 +97,11 @@
     color: white;
     font-weight: 600;
     cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+    background: #756cff;
 }
 
 .auth-submit:disabled {
@@ -109,6 +115,34 @@
     background: #381e26;
     border-radius: 8px;
     font-size: 13px;
+    line-height: 1.5;
+}
+
+.auth-success {
+    padding: 13px;
+    color: #86efac;
+    background: #142d25;
+    border: 1px solid #24543e;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.auth-forgot {
+    margin-top: -7px;
+    text-align: right;
+    font-size: 13px;
+}
+
+.auth-forgot a {
+    color: #938cff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-forgot a:hover {
+    color: #b0aaff;
+    text-decoration: underline;
 }
 
 .auth-switch {
@@ -116,6 +150,7 @@
     text-align: center;
     color: #929baa;
     font-size: 13px;
+    line-height: 1.6;
 }
 
 .auth-switch a {
@@ -124,10 +159,15 @@
     font-weight: 600;
 }
 
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
 .auth-footer {
     margin-top: 24px;
     color: #626c7c;
     font-size: 12px;
+    text-align: center;
 }
 
 .auth-loading {
@@ -136,4 +176,18 @@
     place-items: center;
     background: #0b0e14;
     color: white;
+}
+
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 16px;
+    }
+
+    .auth-card {
+        padding: 28px 22px;
+    }
+
+    .auth-brand {
+        margin-bottom: 30px;
+    }
 }

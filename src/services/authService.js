@@ -1,9 +1,11 @@
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("node:crypto");
 
 const pool = require("../config/database");
 const env = require("../config/env");
+const { sendPasswordResetEmail } = require("./emailService");
 
 async function registerUser({ email, password }) {
     const passwordHash = await bcrypt.hash(password, 12);
@@ -106,9 +108,136 @@ async function changeUserPassword(userId, currentPassword, newPassword) {
     return true;
 }
 
+async function requestPasswordReset(email) {
+    const genericMessage =
+        "If an account with that email exists, a password reset link has been sent.";
+
+    const userResult = await pool.query(
+        `SELECT id, email
+         FROM users
+         WHERE email = $1`,
+        [email]
+    );
+
+    if (userResult.rows.length === 0) {
+        return genericMessage;
+    }
+
+    const user = userResult.rows[0];
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+
+    const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+
+    const resetUrl = new URL(
+        "/reset-password",
+        env.FRONTEND_URL
+    );
+
+    resetUrl.searchParams.set("token", rawToken);
+
+    await pool.query(
+        `DELETE FROM password_reset_tokens
+         WHERE user_id = $1 OR expires_at <= NOW()`,
+        [user.id]
+    );
+
+    await pool.query(
+        `INSERT INTO password_reset_tokens
+            (user_id, token_hash, expires_at)
+         VALUES
+            ($1, $2, NOW() + ($3 * INTERVAL '1 minute'))`,
+        [
+            user.id,
+            tokenHash,
+            env.PASSWORD_RESET_TOKEN_TTL_MINUTES
+        ]
+    );
+
+    try {
+        await sendPasswordResetEmail(user.email, resetUrl.toString());
+    } catch (error) {
+        console.error("Password reset email delivery failed:", error);
+
+        await pool.query(
+            `DELETE FROM password_reset_tokens
+             WHERE token_hash = $1`,
+            [tokenHash]
+        );
+    }
+
+    return genericMessage;
+}
+
+async function resetUserPassword(token, newPassword) {
+    const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const tokenResult = await client.query(
+            `SELECT id, user_id
+             FROM password_reset_tokens
+             WHERE token_hash = $1
+               AND expires_at > NOW()
+             FOR UPDATE`,
+            [tokenHash]
+        );
+
+        if (tokenResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return false;
+        }
+
+        const resetToken = tokenResult.rows[0];
+
+        const updateResult = await client.query(
+            `UPDATE users
+             SET password_hash = $1,
+                 token_version = token_version + 1,
+                 updated_at = NOW()
+             WHERE id = $2
+             RETURNING id`,
+            [newPasswordHash, resetToken.user_id]
+        );
+
+        if (updateResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return false;
+        }
+
+        await client.query(
+            `DELETE FROM password_reset_tokens
+             WHERE user_id = $1`,
+            [resetToken.user_id]
+        );
+
+        await client.query("COMMIT");
+
+        return true;
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     registerUser,
     loginUser,
     getUserById,
-    changeUserPassword
+    changeUserPassword,
+    requestPasswordReset,
+    resetUserPassword
 };

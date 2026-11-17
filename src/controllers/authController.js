@@ -1,8 +1,11 @@
+
 const {
     registerUser,
     loginUser,
     getUserById,
-    changeUserPassword
+    changeUserPassword,
+    requestPasswordReset,
+    resetUserPassword
 } = require("../services/authService");
 
 async function register(req, res, next) {
@@ -80,9 +83,49 @@ async function changePassword(req, res, next) {
     }
 }
 
+async function forgotPassword(req, res, next) {
+    try {
+        const { email } = req.body;
+
+        const message = await requestPasswordReset(email);
+
+        return res.status(200).json({ message });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function resetPassword(req, res, next) {
+    try {
+        const {
+            token,
+            newPassword
+        } = req.body;
+
+        const passwordReset = await resetUserPassword(
+            token,
+            newPassword
+        );
+
+        if (!passwordReset) {
+            return res.status(400).json({
+                error: "This password reset link is invalid or has expired."
+            });
+        }
+
+        return res.status(200).json({
+            message: "Password reset successfully. Please log in again."
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     register,
     login,
     getMe,
-    changePassword
+    changePassword,
+    forgotPassword,
+    resetPassword
 };
