@@ -4,7 +4,8 @@ const {
     listApplications,
     getApplicationById,
     updateApplication,
-    deleteApplication
+    deleteApplication,
+    getApplicationStats
 } = require("../services/applicationService");
 
 // GET: recupera le candidature dell'utente con filtri e paginazione
@@ -18,6 +19,17 @@ async function getApplications(req, res, next) {
         });
 
         res.status(200).json(result);
+    } catch (error) {
+        next(error);
+    }
+}
+
+// GET: recupera le statistiche delle candidature dell'utente
+async function getStats(req, res, next) {
+    try {
+        const stats = await getApplicationStats(req.user.id);
+
+        res.status(200).json(stats);
     } catch (error) {
         next(error);
     }
@@ -106,6 +118,7 @@ async function removeApplication(req, res, next) {
 
 module.exports = {
     getApplications,
+    getStats,
     getApplication,
     createApplication,
     editApplication,

@@ -177,11 +177,32 @@ async function listApplications({
     };
 }
 
+// Recupera le statistiche delle candidature dell'utente
+async function getApplicationStats(userId) {
+    validateUserId(userId);
+
+    const result = await pool.query(
+        `SELECT
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (WHERE status = 'saved')::int AS saved,
+            COUNT(*) FILTER (WHERE status = 'applied')::int AS applied,
+            COUNT(*) FILTER (WHERE status = 'interview')::int AS interview,
+            COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected,
+            COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted
+         FROM applications
+         WHERE user_id = $1`,
+        [userId]
+    );
+
+    return result.rows[0];
+}
+
 module.exports = {
     addApplication,
     getAllApplications,
     listApplications,
     getApplicationById,
     updateApplication,
-    deleteApplication
+    deleteApplication,
+    getApplicationStats
 };

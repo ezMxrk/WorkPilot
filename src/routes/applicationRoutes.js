@@ -8,6 +8,7 @@ const authenticateToken = require("../middleware/authenticateToken");
 // Controllers
 const {
     getApplications,
+    getStats,
     getApplication,
     createApplication,
     editApplication,
@@ -27,6 +28,9 @@ const {
 
 // Tutte le route richiedono autenticazione
 router.use(authenticateToken);
+
+// GET: statistiche delle candidature
+router.get("/stats", getStats);
 
 // GET: tutte le candidature con filtri e paginazione
 router.get(
