@@ -4,7 +4,6 @@ import {
     Activity,
     ArrowUpRight,
     BriefcaseBusiness,
-    CalendarDays,
     ChartNoAxesCombined,
     ChevronDown,
     CircleHelp,
@@ -37,6 +36,15 @@ const navigation = [
     { label: "Analytics", icon: ChartNoAxesCombined }
 ];
 
+const emptyStats = {
+    total: 0,
+    saved: 0,
+    applied: 0,
+    interview: 0,
+    rejected: 0,
+    accepted: 0
+};
+
 function normalizeApplication(application) {
     const rawStatus = String(application.status || "saved").toLowerCase();
 
@@ -46,7 +54,10 @@ function normalizeApplication(application) {
         company: application.company || "",
         position: application.position || "",
         status: rawStatus,
-        date: application.appliedAt || application.applied_at || application.created_at
+        date:
+            application.appliedAt ||
+            application.applied_at ||
+            application.created_at
     };
 }
 
@@ -78,11 +89,15 @@ function App() {
 
     const [activePage, setActivePage] = useState("Dashboard");
     const [applications, setApplications] = useState([]);
+    const [applicationStats, setApplicationStats] = useState(emptyStats);
+
     const [search, setSearch] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editingApplication, setEditingApplication] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
     const [error, setError] = useState("");
     const [formError, setFormError] = useState("");
 
@@ -92,54 +107,82 @@ function App() {
         status: "applied"
     });
 
+    // Carica candidature e statistiche dal backend
     useEffect(() => {
         if (authLoading || !user) return;
 
-        loadApplications();
+        loadDashboardData();
     }, [authLoading, user]);
 
-    async function loadApplications() {
+    async function loadDashboardData() {
         setLoading(true);
         setError("");
 
         try {
-            const response = await api.get("/applications", {
-                params: {
-                    page: 1,
-                    limit: 100
-                }
-            });
+            const [applicationsResponse, statsResponse] = await Promise.all([
+                api.get("/applications", {
+                    params: {
+                        page: 1,
+                        limit: 100
+                    }
+                }),
+                api.get("/applications/stats")
+            ]);
 
-            const records = response.data.data || [];
+            const records = applicationsResponse.data.data || [];
 
             setApplications(records.map(normalizeApplication));
+            setApplicationStats({
+                ...emptyStats,
+                ...statsResponse.data
+            });
         } catch (err) {
             setError(
-                getErrorMessage(err, "Unable to load applications.")
+                getErrorMessage(err, "Unable to load dashboard data.")
             );
         } finally {
             setLoading(false);
         }
     }
 
+    // Aggiorna le statistiche dopo ogni modifica
+    async function refreshStats() {
+        try {
+            const response = await api.get("/applications/stats");
+
+            setApplicationStats({
+                ...emptyStats,
+                ...response.data
+            });
+        } catch (err) {
+            setError(
+                getErrorMessage(err, "Unable to refresh application statistics.")
+            );
+        }
+    }
+
     function openCreateModal() {
         setEditingApplication(null);
+
         setForm({
             company: "",
             position: "",
             status: "applied"
         });
+
         setFormError("");
         setShowModal(true);
     }
 
     function openEditModal(application) {
         setEditingApplication(application);
+
         setForm({
             company: application.company,
             position: application.position,
             status: application.status
         });
+
         setFormError("");
         setShowModal(true);
     }
@@ -185,6 +228,7 @@ function App() {
             }
 
             setShowModal(false);
+            await refreshStats();
         } catch (err) {
             setFormError(
                 getErrorMessage(err, "Unable to save the application.")
@@ -207,6 +251,8 @@ function App() {
             setApplications((current) =>
                 current.filter((item) => item.id !== application.id)
             );
+
+            await refreshStats();
         } catch (err) {
             setError(
                 getErrorMessage(err, "Unable to delete the application.")
@@ -232,6 +278,8 @@ function App() {
                     item.id === updated.id ? updated : item
                 )
             );
+
+            await refreshStats();
         } catch (err) {
             setError(
                 getErrorMessage(err, "Unable to update the status.")
@@ -244,6 +292,7 @@ function App() {
         navigate("/login", { replace: true });
     }
 
+    // Ricerca locale delle candidature caricate
     const filteredApplications = useMemo(() => {
         const query = search.toLowerCase();
 
@@ -254,20 +303,19 @@ function App() {
         );
     }, [applications, search]);
 
+    // Le statistiche provengono direttamente da PostgreSQL
     const stats = useMemo(() => {
-        const total = applications.length;
-        const interviews = applications.filter(
-            (item) => item.status === "interview"
-        ).length;
-        const pending = applications.filter(
-            (item) => item.status === "applied" || item.status === "saved"
-        ).length;
-        const responses = applications.filter(
-            (item) =>
-                item.status === "interview" ||
-                item.status === "accepted" ||
-                item.status === "rejected"
-        ).length;
+        const total = applicationStats.total;
+
+        const interviews = applicationStats.interview;
+
+        const pending =
+            applicationStats.applied + applicationStats.saved;
+
+        const responses =
+            applicationStats.interview +
+            applicationStats.accepted +
+            applicationStats.rejected;
 
         const responseRate = total > 0
             ? Math.round((responses / total) * 100)
@@ -295,7 +343,7 @@ function App() {
                 icon: ChartNoAxesCombined
             }
         ];
-    }, [applications]);
+    }, [applicationStats]);
 
     const recentApplications = activePage === "Dashboard"
         ? filteredApplications.slice(0, 5)
@@ -333,7 +381,7 @@ function App() {
 
                             {label === "Applications" && (
                                 <span className="nav-count">
-                                    {applications.length}
+                                    {applicationStats.total}
                                 </span>
                             )}
                         </button>
@@ -412,7 +460,10 @@ function App() {
                 {error && (
                     <div className="dashboard-error">
                         {error}
-                        <button onClick={() => setError("")} aria-label="Close">
+                        <button
+                            onClick={() => setError("")}
+                            aria-label="Close"
+                        >
                             <X size={16} />
                         </button>
                     </div>
@@ -475,9 +526,7 @@ function App() {
                                                 <span className={`success-dot ${value}`} />
                                                 {label}
                                                 <strong>
-                                                    {applications.filter(
-                                                        (item) => item.status === value
-                                                    ).length}
+                                                    {applicationStats[value]}
                                                 </strong>
                                             </div>
                                         ))}
@@ -496,7 +545,7 @@ function App() {
                                                 : "All applications"}
                                         </h2>
                                         <p>
-                                            {applications.length} applications in total
+                                            {applicationStats.total} applications in total
                                         </p>
                                     </div>
 
@@ -537,8 +586,8 @@ function App() {
 
                                     <button
                                         className="filter-button"
-                                        onClick={loadApplications}
-                                        title="Refresh applications"
+                                        onClick={loadDashboardData}
+                                        title="Refresh applications and statistics"
                                     >
                                         <Activity size={16} /> Refresh
                                     </button>
@@ -668,25 +717,19 @@ function App() {
                                             <div>
                                                 <span className="success-dot interview" />
                                                 Interviews
-                                                <strong>{stats[1].value}</strong>
+                                                <strong>{applicationStats.interview}</strong>
                                             </div>
+
                                             <div>
                                                 <span className="success-dot applied" />
                                                 Applied
-                                                <strong>
-                                                    {applications.filter(
-                                                        (item) => item.status === "applied"
-                                                    ).length}
-                                                </strong>
+                                                <strong>{applicationStats.applied}</strong>
                                             </div>
+
                                             <div>
                                                 <span className="success-dot rejected" />
                                                 Rejected
-                                                <strong>
-                                                    {applications.filter(
-                                                        (item) => item.status === "rejected"
-                                                    ).length}
-                                                </strong>
+                                                <strong>{applicationStats.rejected}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -696,6 +739,7 @@ function App() {
                                     <div className="tip-icon">
                                         <Activity size={20} />
                                     </div>
+
                                     <div>
                                         <span className="eyebrow">QUICK TIP</span>
                                         <h2>Stay consistent</h2>
@@ -713,10 +757,13 @@ function App() {
                         <div className="placeholder-icon">
                             <Settings size={25} />
                         </div>
+
                         <h1>{activePage}</h1>
+
                         <p>
                             This section will be available in a future WorkPilot update.
                         </p>
+
                         <button
                             className="primary-button"
                             onClick={() => setActivePage("Dashboard")}
@@ -744,6 +791,7 @@ function App() {
                                         ? "Edit application"
                                         : "Add application"}
                                 </h2>
+
                                 <p>
                                     {editingApplication
                                         ? "Update your job application details."
