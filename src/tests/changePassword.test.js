@@ -31,7 +31,7 @@ test.before(async () => {
     testUserId = result.rows[0].id;
 
     token = jwt.sign(
-        { sub: testUserId },
+        { sub: testUserId, tokenVersion: 0 },
         env.JWT_SECRET,
         { expiresIn: env.JWT_EXPIRES_IN }
     );
@@ -42,7 +42,8 @@ test.beforeEach(async () => {
 
     await pool.query(
         `UPDATE users
-         SET password_hash = $1
+         SET password_hash = $1,
+             token_version = 0
          WHERE id = $2`,
         [passwordHash, testUserId]
     );
@@ -57,7 +58,7 @@ test.after(async () => {
     }
 });
 
-test("PUT /api/auth/change-password should update the password", async () => {
+test("PUT /api/auth/change-password should update the password and revoke old sessions", async () => {
     const response = await request(app)
         .put("/api/auth/change-password")
         .set("Authorization", `Bearer ${token}`)
@@ -75,7 +76,9 @@ test("PUT /api/auth/change-password should update the password", async () => {
     );
 
     const result = await pool.query(
-        "SELECT password_hash FROM users WHERE id = $1",
+        `SELECT password_hash, token_version
+         FROM users
+         WHERE id = $1`,
         [testUserId]
     );
 
@@ -91,6 +94,17 @@ test("PUT /api/auth/change-password should update the password", async () => {
 
     assert.equal(oldPasswordMatches, false);
     assert.equal(newPasswordMatches, true);
+    assert.equal(result.rows[0].token_version, 1);
+
+    const oldSessionResponse = await request(app)
+        .get("/api/auth/me")
+        .set("Authorization", `Bearer ${token}`);
+
+    assert.equal(oldSessionResponse.status, 401);
+    assert.equal(
+        oldSessionResponse.body.error,
+        "Authentication session has been revoked."
+    );
 });
 
 test("PUT /api/auth/change-password should reject an incorrect current password", async () => {

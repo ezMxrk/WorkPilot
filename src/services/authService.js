@@ -1,3 +1,4 @@
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -19,7 +20,7 @@ async function registerUser({ email, password }) {
 
 async function loginUser({ email, password }) {
     const result = await pool.query(
-        `SELECT id, email, password_hash, created_at
+        `SELECT id, email, password_hash, created_at, token_version
          FROM users
          WHERE email = $1`,
         [email]
@@ -41,7 +42,10 @@ async function loginUser({ email, password }) {
     }
 
     const token = jwt.sign(
-        { sub: user.id },
+        {
+            sub: user.id,
+            tokenVersion: user.token_version
+        },
         env.JWT_SECRET,
         { expiresIn: env.JWT_EXPIRES_IN }
     );
@@ -92,7 +96,9 @@ async function changeUserPassword(userId, currentPassword, newPassword) {
 
     await pool.query(
         `UPDATE users
-         SET password_hash = $1
+         SET password_hash = $1,
+             token_version = token_version + 1,
+             updated_at = NOW()
          WHERE id = $2`,
         [newPasswordHash, userId]
     );
